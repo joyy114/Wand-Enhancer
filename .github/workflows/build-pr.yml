@@ -1,7 +1,7 @@
 name: Build PR 345
 
 on:
-  workflow_dispatch: # 支援手動一鍵觸發
+  workflow_dispatch:
 
 jobs:
   build:
@@ -12,22 +12,27 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: 'k1tbyte/Wand-Enhancer'
-          ref: 'refs/pull/345/head' # 直接拉取 PR 345 的最新代碼
+          ref: 'refs/pull/345/head'
           fetch-depth: 0
 
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: '8.0.x' # 根據專案目標版本自動匹配，預設使用常用 LTS
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
 
-      - name: Build & Publish Release
-        run: dotnet publish -c Release -o ./publish_output
+      - name: Restore NuGet packages
+        run: nuget restore
+
+      - name: Build Solution
+        run: msbuild /p:Configuration=Release /p:Platform="Any CPU"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Wand-Enhancer-PR345
-          path: ./publish_output
+          # 收集編譯輸出的 exe 與 dll
+          path: |
+            **/bin/Release/**/WandEnhancer.exe
+            **/bin/Release/**/*.dll
+            **/bin/Release/**/*.config
